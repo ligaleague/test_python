@@ -1,0 +1,69 @@
+import requests
+import base64 
+
+
+# Прописываем данные по ключам и счету
+
+api_key = ''
+client_secret = ''
+acc_number = ''
+currency = 'USD'
+start_date = "2023-01-01"
+end_date = "2023-12-31"
+base_url = 'https://account.bog.ge/auth/realms/bog/protocol/openid-connect/token'
+
+#указываем методы
+
+auth_string = f"{api_key}:{client_secret}"
+auth_header = base64.b64encode(auth_string.encode()).decode()
+
+data = {
+    'grant_type': 'client_credentials'
+}
+
+headers = {
+    'Authorization': f'Basic {auth_header}',
+    'Content-Type': 'application/x-www-form-urlencoded'
+}
+
+#пост запрос на получение токена
+
+response = requests.post(base_url, headers=headers, data=data)
+
+#проверка ответа сервера на ошибку и наличие токена в json
+
+if response.status_code == 200:
+    response_data = response.json()
+    if 'access_token' in response_data:
+        access_token = response_data['access_token']
+        print(f"Токен доступа: {access_token}")
+    else:
+        print("Не удалось получить токен доступа")
+else:
+    print(f"Ошибка: {response.status_code} - {response.text}")
+
+#задаем ссылку к нашему аккаунту, указывая параметры 
+
+base_url = f"https://api.businessonline.ge/api/statement/{acc_number}/{currency}/{start_date}/{end_date}"
+
+#переписываем headers под отправку барьер-токена 
+
+headers = {
+    "Authorization": f"Bearer {access_token}"
+}
+
+#запрос на получение выписки
+
+response_amonaweri = requests.get(base_url, headers=headers)
+
+#проверка полученного ответа от сервера 
+
+if response_amonaweri.status_code == 200:
+    response_data = response_amonaweri.json()
+    records = response_data.get('Records', [])  # Получаем записи из ответа
+    print(records)
+else:
+    print(f"Ошибка: {response_amonaweri.status_code} - {response_amonaweri.text}")
+
+
+
